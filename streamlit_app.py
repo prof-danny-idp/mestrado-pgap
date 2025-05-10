@@ -17,7 +17,12 @@ st.set_page_config(
 
 # --- Título e Informações ---
 st.title('🎓 Previsor de Evasão Escolar')
-st.info('Este aplicativo utiliza Machine Learning para prever a probabilidade de evasão escolar de um aluno, comparando dois modelos: Árvore de Decisão e Random Forest.')
+st.info(
+    "Este aplicativo é um protótipo desenvolvido como exercício para a disciplina de Inteligência Artificial no Setor Público, "
+    "ministrada pelo Prof. Danny. O objetivo é demonstrar a aplicação de técnicas de Machine Learning, como Árvore de Decisão e Random Forest, "
+    "para prever a probabilidade de evasão escolar. **Importante: Os dados utilizados para treinamento e demonstração são fictícios e "
+    "foram criados especificamente para este exercício acadêmico.**"
+)
 
 # --- Carregamento dos Dados ---
 @st.cache_data # Cacheia o carregamento dos dados para melhor performance
@@ -141,7 +146,7 @@ if df_raw is not None:
     try:
         X_train, X_test, y_train, y_test = train_test_split(
             X_processed, y_processed, 
-            test_size=0.30, # 30% para teste
+            test_size=0.20, # 20% para teste
             random_state=42, 
             stratify=y_processed if y_processed.nunique() > 1 else None # Mantém proporção das classes
         )
@@ -235,10 +240,10 @@ if df_raw is not None:
 
                 resultado_final_input = status_aluno_map[prediction_input[0]]
                 if resultado_final_input == status_aluno_map[1]: 
-                    st.error(f'**Predição Final ({model_name}): {resultado_final_input}**') # Emoji removido
+                    st.error(f'**Predição Final ({model_name}): {resultado_final_input}**')
                 else: 
-                    st.success(f'**Predição Final ({model_name}): {resultado_final_input}**') # Emoji removido
-                    if model_name == 'Árvore de Decisão': st.balloons() 
+                    st.success(f'**Predição Final ({model_name}): {resultado_final_input}**')
+                    # if model_name == 'Árvore de Decisão': st.balloons() # Removido
 
                 # 3. Plot Tree (somente para Árvore de Decisão)
                 if model_name == 'Árvore de Decisão':
