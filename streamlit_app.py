@@ -232,8 +232,7 @@ if df_raw is not None:
                 st.warning("Atenção: Este aluno apresenta risco de evasão segundo este modelo. Considere ações preventivas.")
             else: # Não Evadirá
                 st.success(f'**Predição Final ({model_name}): {resultado_final_input}** 😊')
-                st.balloons()
-            
+                            
             # Feature Importance (apenas para Random Forest, como exemplo)
             if model_name == 'Random Forest' and hasattr(model_for_input, 'feature_importances_'):
                 with st.expander("💡 Importância das Features (Random Forest - treinado com todos os dados)"):
