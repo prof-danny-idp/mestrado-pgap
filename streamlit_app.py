@@ -141,7 +141,7 @@ if df_raw is not None:
     try:
         X_train, X_test, y_train, y_test = train_test_split(
             X_processed, y_processed, 
-            test_size=0.20, # 20% para teste
+            test_size=0.30, # 30% para teste
             random_state=42, 
             stratify=y_processed if y_processed.nunique() > 1 else None # Mantém proporção das classes
         )
