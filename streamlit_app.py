@@ -1,121 +1,116 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
+import numpy as np
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-st.title('🤖 Machine Learning App')
+st.title("🚨 Detecção de Fraude em Leilões")
 
-st.info('This is app builds a machine learning model!')
+st.info("Este app utiliza algoritmos de Machine Learning para prever a probabilidade de uma atividade fraudulenta em leilões.")
 
-with st.expander('Data'):
-  st.write('**Raw data**')
-  df = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/penguins_cleaned.csv')
-  df
+# Carregar dados
+url = 'https://raw.githubusercontent.com/prof-danny-idp/machinelearning/refs/heads/main/fraude_leilao_pt.csv'
+df = pd.read_csv(url)
 
-  st.write('**X**')
-  X_raw = df.drop('species', axis=1)
-  X_raw
+with st.expander("Visualizar dados"):
+    st.dataframe(df)
 
-  st.write('**y**')
-  y_raw = df.species
-  y_raw
+# Separar X e y
+X_raw = df.drop('Classe', axis=1)
+y = df['Classe']
 
-with st.expander('Data visualization'):
-  st.scatter_chart(data=df, x='bill_length_mm', y='body_mass_g', color='species')
+# Sidebar - Entrada de dados do usuário
+st.sidebar.header("Entrada das variáveis")
 
-# Input features
-with st.sidebar:
-  st.header('Input features')
-  island = st.selectbox('Island', ('Biscoe', 'Dream', 'Torgersen'))
-  bill_length_mm = st.slider('Bill length (mm)', 32.1, 59.6, 43.9)
-  bill_depth_mm = st.slider('Bill depth (mm)', 13.1, 21.5, 17.2)
-  flipper_length_mm = st.slider('Flipper length (mm)', 172.0, 231.0, 201.0)
-  body_mass_g = st.slider('Body mass (g)', 2700.0, 6300.0, 4207.0)
-  gender = st.selectbox('Gender', ('male', 'female'))
-  
-  # Create a DataFrame for the input features
-  data = {'island': island,
-          'bill_length_mm': bill_length_mm,
-          'bill_depth_mm': bill_depth_mm,
-          'flipper_length_mm': flipper_length_mm,
-          'body_mass_g': body_mass_g,
-          'sex': gender}
-  input_df = pd.DataFrame(data, index=[0])
-  input_penguins = pd.concat([input_df, X_raw], axis=0)
+def entrada_usuario():
+    ID_Registro = 0
+    ID_Leilao = 0
+    ID_Licitante = 0
+    Tendencia_Licitante = st.sidebar.slider("Tendência do Licitante", 0.0, 1.0, 0.5)
+    Proporcao_Lances = st.sidebar.slider("Proporção de Lances", 0.0, 1.0, 0.5)
+    Ultrapassagem_Sucessiva = st.sidebar.slider("Ultrapassagem Sucessiva", 0.0, 1.0, 0.5)
+    Ultimo_Lance = st.sidebar.slider("Último Lance", 0.0, 1.0, 0.5)
+    Numero_Lances = st.sidebar.slider("Número de Lances", float(X_raw['Numero_Lances'].min()), float(X_raw['Numero_Lances'].max()), float(X_raw['Numero_Lances'].mean()))
+    Preco_Inicial_Medio = st.sidebar.slider("Preço Inicial Médio", float(X_raw['Preco_Inicial_Medio'].min()), float(X_raw['Preco_Inicial_Medio'].max()), float(X_raw['Preco_Inicial_Medio'].mean()))
+    Lances_Iniciais = st.sidebar.slider("Lances Iniciais", 0.0, 1.0, 0.5)
+    Taxa_Vitorias = st.sidebar.slider("Taxa de Vitórias", 0.0, 1.0, 0.5)
+    Duracao_Leilao = st.sidebar.slider("Duração do Leilão", float(X_raw['Duracao_Leilao'].min()), float(X_raw['Duracao_Leilao'].max()), float(X_raw['Duracao_Leilao'].mean()))
+    
+    dados = {
+        'ID_Leilao': ID_Leilao,
+        'ID_Licitante': ID_Licitante,
+        'Tendencia_Licitante': Tendencia_Licitante,
+        'Proporcao_Lances': Proporcao_Lances,
+        'Ultrapassagem_Sucessiva': Ultrapassagem_Sucessiva,
+        'Ultimo_Lance': Ultimo_Lance,
+        'Numero_Lances': Numero_Lances,
+        'Preco_Inicial_Medio': Preco_Inicial_Medio,
+        'Lances_Iniciais': Lances_Iniciais,
+        'Taxa_Vitorias': Taxa_Vitorias,
+        'Duracao_Leilao': Duracao_Leilao
+    }
+    return pd.DataFrame(dados, index=[0])
 
-with st.expander('Input features'):
-  st.write('**Input penguin**')
-  input_df
-  st.write('**Combined penguins data**')
-  input_penguins
+input_df = entrada_usuario()
 
+# Combinar entrada com os dados para garantir o mesmo formato
+input_X = pd.concat([input_df, X_raw], axis=0).reset_index(drop=True)
+X = input_X.drop(['ID_Leilao', 'ID_Licitante'], axis=1)
+input_row = X.iloc[[0]]
+X_model = X.drop(index=0)
 
-# Data preparation
-# Encode X
-encode = ['island', 'sex']
-df_penguins = pd.get_dummies(input_penguins, prefix=encode)
+# Treinar modelos
+models = {
+    'KNN (k=5)': KNeighborsClassifier(n_neighbors=5),
+    'Árvore de Decisão': DecisionTreeClassifier(),
+    'Random Forest': RandomForestClassifier()
+}
 
-X = df_penguins[1:]
-input_row = df_penguins[:1]
+results = {}
+metricas = {}
 
-# Encode y
-target_mapper = {'Adelie': 0,
-                 'Chinstrap': 1,
-                 'Gentoo': 2}
-def target_encode(val):
-  return target_mapper[val]
+for nome, modelo in models.items():
+    modelo.fit(X_model, y)
+    y_pred = modelo.predict(X_model)
+    proba = modelo.predict_proba(input_row)[0][1]
+    results[nome] = proba
+    
+    # Métricas
+    acc = accuracy_score(y, y_pred)
+    prec = precision_score(y, y_pred)
+    rec = recall_score(y, y_pred)
+    cm = confusion_matrix(y, y_pred)
+    metricas[nome] = {'acuracia': acc, 'precisao': prec, 'recall': rec, 'matriz': cm}
 
-y = y_raw.apply(target_encode)
+# Mostrar resultado de previsão
+st.subheader("🔍 Probabilidade de Fraude Estimada")
 
-with st.expander('Data preparation'):
-  st.write('**Encoded X (input penguin)**')
-  input_row
-  st.write('**Encoded y**')
-  y
+for nome, proba in results.items():
+    st.write(f"**{nome}**")
+    st.progress(proba)
+    st.write(f"Probabilidade de fraude: `{proba:.2%}`")
 
+# Mostrar entrada
+with st.expander("📝 Entrada do usuário"):
+    st.write(input_df)
 
-# Model training and inference
-## Train the ML model
-clf = RandomForestClassifier()
-clf.fit(X, y)
-
-## Apply model to make predictions
-prediction = clf.predict(input_row)
-prediction_proba = clf.predict_proba(input_row)
-
-df_prediction_proba = pd.DataFrame(prediction_proba)
-df_prediction_proba.columns = ['Adelie', 'Chinstrap', 'Gentoo']
-df_prediction_proba.rename(columns={0: 'Adelie',
-                                 1: 'Chinstrap',
-                                 2: 'Gentoo'})
-
-# Display predicted species
-st.subheader('Predicted Species')
-st.dataframe(df_prediction_proba,
-             column_config={
-               'Adelie': st.column_config.ProgressColumn(
-                 'Adelie',
-                 format='%f',
-                 width='medium',
-                 min_value=0,
-                 max_value=1
-               ),
-               'Chinstrap': st.column_config.ProgressColumn(
-                 'Chinstrap',
-                 format='%f',
-                 width='medium',
-                 min_value=0,
-                 max_value=1
-               ),
-               'Gentoo': st.column_config.ProgressColumn(
-                 'Gentoo',
-                 format='%f',
-                 width='medium',
-                 min_value=0,
-                 max_value=1
-               ),
-             }, hide_index=True)
-
-
-penguins_species = np.array(['Adelie', 'Chinstrap', 'Gentoo'])
-st.success(str(penguins_species[prediction][0]))
+# Relatório de desempenho dos modelos
+with st.expander("📊 Relatório dos Modelos"):
+    for nome, met in metricas.items():
+        st.markdown(f"### {nome}")
+        st.write(f"Acurácia: `{met['acuracia']:.2%}`")
+        st.write(f"Precisão: `{met['precisao']:.2%}`")
+        st.write(f"Recall: `{met['recall']:.2%}`")
+        
+        # Matriz de confusão como gráfico
+        fig, ax = plt.subplots()
+        sns.heatmap(met['matriz'], annot=True, fmt="d", cmap="Blues", cbar=False,
+                    xticklabels=["Normal", "Fraude"], yticklabels=["Normal", "Fraude"], ax=ax)
+        ax.set_xlabel("Predito")
+        ax.set_ylabel("Real")
+        ax.set_title("Matriz de Confusão")
+        st.pyplot(fig)
