@@ -1,9 +1,6 @@
-# 📦 Streamlit App Starter Kit 
-```
-⬆️ (Replace above with your app's name)
-```
+# 🐕🔴⚫ App Machine Learning - Prof. Danny
 
-Description of the app ...
+Aplicativo de machine learning para aula do Mestrado de Administração Pública
 
 ## Demo App
 
