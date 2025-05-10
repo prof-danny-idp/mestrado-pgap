@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 # --- Configurações da Página ---
 st.set_page_config(
     page_title="Previsor de Evasão Escolar",
-    page_icon="�",
+    page_icon="🎓",
     layout="wide"
 )
 
@@ -235,10 +235,10 @@ if df_raw is not None:
 
                 resultado_final_input = status_aluno_map[prediction_input[0]]
                 if resultado_final_input == status_aluno_map[1]: 
-                    st.error(f'**Predição Final ({model_name}): {resultado_final_input}** 😟')
+                    st.error(f'**Predição Final ({model_name}): {resultado_final_input}**') # Emoji removido
                 else: 
-                    st.success(f'**Predição Final ({model_name}): {resultado_final_input}** 😊')
-                    if model_name == 'Árvore de Decisão': st.balloons() # Balões só para um, para não poluir
+                    st.success(f'**Predição Final ({model_name}): {resultado_final_input}**') # Emoji removido
+                    if model_name == 'Árvore de Decisão': st.balloons() 
 
                 # 3. Plot Tree (somente para Árvore de Decisão)
                 if model_name == 'Árvore de Decisão':
@@ -279,4 +279,3 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.info("Desenvolvido como exemplo de app de Machine Learning com Streamlit.")
-�
