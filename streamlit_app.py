@@ -63,6 +63,19 @@ X = input_X.drop(['ID_Leilao', 'ID_Licitante'], axis=1)
 input_row = X.iloc[[0]]
 X_model = X.drop(index=0)
 
+# Filtrar apenas colunas numéricas para X
+X_raw_num = X_raw.select_dtypes(include=[np.number])
+
+# Garantir que input_df tenha as mesmas colunas numéricas
+input_df_num = input_df[X_raw_num.columns]
+
+# Concatenar entrada do usuário com o restante para manter compatibilidade
+X_concat = pd.concat([input_df_num, X_raw_num], axis=0).reset_index(drop=True)
+
+# Separar entrada do usuário e dados para treino
+input_row = X_concat.iloc[[0]]
+X_model = X_concat.iloc[1:]
+
 # Treinar modelos
 models = {
     'KNN (k=5)': KNeighborsClassifier(n_neighbors=5),
